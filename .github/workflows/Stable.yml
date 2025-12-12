@@ -1,0 +1,37 @@
+name: Frp Server Instance Image Stable Build
+
+run-name: Frp Server Instance Image Stable Build <${{ github.actor }}>
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  Frp-Server-Instance:
+    runs-on: ubuntu-24.04
+    environment: Stable
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Version Extraction
+        id: version
+        run: |
+          version="${GITHUB_REF#refs/tags/v}"
+          echo "version=$version" >> $GITHUB_OUTPUT
+          curl -LO https://github.com/fatedier/frp/releases/download/v0.65.0/frp_0.65.0_linux_amd64.tar.gz
+          tar -xzf frp_0.65.0_linux_amd64.tar.gz
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: wupeize/frps-instance:${{ steps.version.outputs.version }},wupeize/frps-instance:stable,wupeize/frps-instance:latest
